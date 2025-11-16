@@ -1,13 +1,18 @@
 import { useState } from "react";
+import config from "./config.json";
 
 export default function RetirementCalculator() {
-  const [annualIncome, setAnnualIncome] = useState(50000);
-  const [initialSavings, setInitialSavings] = useState(100000);
-  const [savingsRate, setSavingsRate] = useState(15);
+  const [annualIncome, setAnnualIncome] = useState(
+    config.defaults.annualIncome,
+  );
+  const [initialSavings, setInitialSavings] = useState(
+    config.defaults.initialSavings,
+  );
+  const [savingsRate, setSavingsRate] = useState(config.defaults.savingsRate);
 
   // Define the ranges for the table
-  const yearOptions = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
-  const returnRateOptions = [0, 2, 4, 6, 8, 10, 12, 14];
+  const yearOptions = config.projections.yearOptions;
+  const returnRateOptions = config.projections.returnRateOptions;
 
   const calculateBalance = (years, returnRate) => {
     let balance = initialSavings;
@@ -39,9 +44,9 @@ export default function RetirementCalculator() {
               </label>
               <input
                 type="range"
-                min="20000"
-                max="1000000"
-                step="10000"
+                min={config.sliders.annualIncome.min}
+                max={config.sliders.annualIncome.max}
+                step={config.sliders.annualIncome.step}
                 value={annualIncome}
                 onChange={(e) => setAnnualIncome(Number(e.target.value))}
                 className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
@@ -54,9 +59,9 @@ export default function RetirementCalculator() {
               </label>
               <input
                 type="range"
-                min="5"
-                max="50"
-                step="1"
+                min={config.sliders.savingsRate.min}
+                max={config.sliders.savingsRate.max}
+                step={config.sliders.savingsRate.step}
                 value={savingsRate}
                 onChange={(e) => setSavingsRate(Number(e.target.value))}
                 className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
@@ -73,9 +78,9 @@ export default function RetirementCalculator() {
               </label>
               <input
                 type="range"
-                min="0"
-                max="1000000"
-                step="10000"
+                min={config.sliders.initialSavings.min}
+                max={config.sliders.initialSavings.max}
+                step={config.sliders.initialSavings.step}
                 value={initialSavings}
                 onChange={(e) => setInitialSavings(Number(e.target.value))}
                 className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer"
@@ -120,9 +125,9 @@ export default function RetirementCalculator() {
                     {yearOptions.map((year) => {
                       const balance = calculateBalance(year, rate);
                       let bgColor = "";
-                      if (balance > 10000000) {
+                      if (balance > config.colorThresholds.green) {
                         bgColor = "bg-green-200";
-                      } else if (balance > 5000000) {
+                      } else if (balance > config.colorThresholds.yellow) {
                         bgColor = "bg-yellow-200";
                       }
                       return (

@@ -1,0 +1,32 @@
+{
+  "defaults": {
+    "annualIncome": 50000,
+    "initialSavings": 100000,
+    "savingsRate": 15
+  },
+  "sliders": {
+    "annualIncome": {
+      "min": 20000,
+      "max": 1000000,
+      "step": 10000
+    },
+    "savingsRate": {
+      "min": 5,
+      "max": 50,
+      "step": 1
+    },
+    "initialSavings": {
+      "min": 0,
+      "max": 1000000,
+      "step": 10000
+    }
+  },
+  "projections": {
+    "yearOptions": [5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
+    "returnRateOptions": [0, 2, 4, 6, 8, 10, 12, 14]
+  },
+  "colorThresholds": {
+    "green": 10000000,
+    "yellow": 5000000
+  }
+}
