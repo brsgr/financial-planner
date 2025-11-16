@@ -26,21 +26,24 @@ export default function RetirementCalculator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-terminal-bg text-terminal-text font-mono p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2 text-center">
-          Retirement Calculator
+        <h1 className="text-2xl text-terminal-amber mb-1">
+          RETIREMENT_CALC.EXE
         </h1>
-        <p className="text-gray-600 text-center mb-8">
-          Plan your financial future with simple projections
+        <p className="text-sm text-terminal-text/60 mb-8">
+          &gt; financial projection model v1.0
         </p>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+        <div className="bg-terminal-bgLight border border-terminal-border p-6 mb-8">
           {/* Controls */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Annual Income: ${annualIncome.toLocaleString()}
+              <label className="block text-xs text-terminal-text/80 mb-2">
+                ANNUAL_INCOME:{" "}
+                <span className="text-terminal-amber">
+                  ${annualIncome.toLocaleString()}
+                </span>
               </label>
               <input
                 type="range"
@@ -49,13 +52,14 @@ export default function RetirementCalculator() {
                 step={config.sliders.annualIncome.step}
                 value={annualIncome}
                 onChange={(e) => setAnnualIncome(Number(e.target.value))}
-                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-1 bg-terminal-border appearance-none cursor-pointer accent-terminal-amber"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Savings Rate: {savingsRate}%
+              <label className="block text-xs text-terminal-text/80 mb-2">
+                SAVINGS_RATE:{" "}
+                <span className="text-terminal-amber">{savingsRate}%</span>
               </label>
               <input
                 type="range"
@@ -64,17 +68,19 @@ export default function RetirementCalculator() {
                 step={config.sliders.savingsRate.step}
                 value={savingsRate}
                 onChange={(e) => setSavingsRate(Number(e.target.value))}
-                className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-1 bg-terminal-border appearance-none cursor-pointer accent-terminal-amber"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Annual contribution: $
-                {(annualIncome * (savingsRate / 100)).toLocaleString()}
+              <p className="text-xs text-terminal-text/50 mt-1">
+                → ${(annualIncome * (savingsRate / 100)).toLocaleString()}/yr
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Initial Savings: ${initialSavings.toLocaleString()}
+              <label className="block text-xs text-terminal-text/80 mb-2">
+                INITIAL_BALANCE:{" "}
+                <span className="text-terminal-amber">
+                  ${initialSavings.toLocaleString()}
+                </span>
               </label>
               <input
                 type="range"
@@ -83,59 +89,55 @@ export default function RetirementCalculator() {
                 step={config.sliders.initialSavings.step}
                 value={initialSavings}
                 onChange={(e) => setInitialSavings(Number(e.target.value))}
-                className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-1 bg-terminal-border appearance-none cursor-pointer accent-terminal-amber"
               />
             </div>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Retirement Balance Projections
+            <h3 className="text-sm text-terminal-amber mb-2">
+              [PROJECTION_MATRIX]
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Table shows projected balance based on years to retirement
-              (columns) and annual return rate (rows)
+            <p className="text-xs text-terminal-text/50 mb-4">
+              balance by years(cols) × return_rate(rows)
             </p>
-            <table className="min-w-full border-collapse border border-gray-300">
+            <table className="min-w-full border-collapse border border-terminal-border">
               <thead>
-                <tr className="bg-indigo-600 text-white">
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold">
-                    Return Rate
+                <tr className="bg-terminal-bg">
+                  <th className="border border-terminal-border px-3 py-2 text-left text-xs text-terminal-amber">
+                    RATE%
                   </th>
                   {yearOptions.map((year) => (
                     <th
                       key={year}
-                      className="border border-gray-300 px-4 py-3 text-center font-semibold"
+                      className="border border-terminal-border px-3 py-2 text-center text-xs text-terminal-amber"
                     >
-                      {year} yrs
+                      {year}Y
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {returnRateOptions.map((rate, idx) => (
-                  <tr
-                    key={rate}
-                    className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}
-                  >
-                    <td className="border border-gray-300 px-4 py-3 font-semibold text-gray-700">
+                {returnRateOptions.map((rate) => (
+                  <tr key={rate}>
+                    <td className="border border-terminal-border px-3 py-2 text-xs text-terminal-text/80">
                       {rate}%
                     </td>
                     {yearOptions.map((year) => {
                       const balance = calculateBalance(year, rate);
-                      let bgColor = "";
+                      let textColor = "text-terminal-text";
                       if (balance > config.colorThresholds.green) {
-                        bgColor = "bg-green-200";
+                        textColor = "text-terminal-green";
                       } else if (balance > config.colorThresholds.yellow) {
-                        bgColor = "bg-yellow-200";
+                        textColor = "text-terminal-amber";
                       }
                       return (
                         <td
                           key={`${rate}-${year}`}
-                          className={`border border-gray-300 px-4 py-3 text-center ${bgColor}`}
+                          className={`border border-terminal-border px-3 py-2 text-center text-xs ${textColor}`}
                         >
-                          ${(balance / 1000000).toFixed(2)}m
+                          ${(balance / 1000000).toFixed(2)}M
                         </td>
                       );
                     })}
@@ -146,12 +148,9 @@ export default function RetirementCalculator() {
           </div>
         </div>
 
-        <div className="text-center text-sm text-gray-600">
-          <p>This is a simplified projection for educational purposes only.</p>
-          <p>
-            Actual investment returns vary and past performance doesn't
-            guarantee future results.
-          </p>
+        <div className="text-xs text-terminal-text/40 border-t border-terminal-border pt-4">
+          <p>// simplified projection model - educational purposes only</p>
+          <p>// returns are variable - past performance ≠ future results</p>
         </div>
       </div>
     </div>
