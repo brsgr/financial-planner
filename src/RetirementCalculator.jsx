@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function RetirementCalculator() {
   const [annualIncome, setAnnualIncome] = useState(50000);
