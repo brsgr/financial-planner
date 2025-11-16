@@ -116,7 +116,9 @@ export default function WealthChart({
                               key={idx}
                               style={{
                                 color:
-                                  event.type === "purchase"
+                                  event.type === "purchase" ||
+                                  event.type === "mortgage_down" ||
+                                  event.type === "mortgage_payment"
                                     ? "#ff6b6b"
                                     : "#a0a0a0",
                                 margin: "2px 0",
@@ -157,7 +159,13 @@ export default function WealthChart({
                       x={point.year}
                       y={point.balance}
                       r={6}
-                      fill={event.type === "purchase" ? "#ff6b6b" : "#d4af37"}
+                      fill={
+                        event.type === "purchase" ||
+                        event.type === "mortgage_down" ||
+                        event.type === "mortgage_payment"
+                          ? "#ff6b6b"
+                          : "#d4af37"
+                      }
                       stroke="#1a1a1a"
                       strokeWidth={2}
                     />

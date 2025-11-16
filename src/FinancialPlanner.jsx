@@ -77,13 +77,35 @@ export default function FinancialPlanner() {
       const annualContribution = currentIncome * (currentSavingsRate / 100);
       balance += annualContribution;
 
-      // Subtract big purchases for this year
+      // Handle big purchases and mortgages for this year
       if (advancedMode) {
-        const purchasesThisYear = bigPurchases.filter(
-          (p) => p.year === year + 1,
-        );
-        purchasesThisYear.forEach((purchase) => {
-          balance -= purchase.amount;
+        bigPurchases.forEach((purchase) => {
+          if (purchase.type === "mortgage") {
+            // Down payment in the first year
+            if (purchase.year === year + 1) {
+              balance -= purchase.downPayment || 0;
+            }
+            // Annual mortgage payments
+            if (
+              year + 1 >= purchase.year &&
+              year + 1 < purchase.year + (purchase.mortgageTerm || 30)
+            ) {
+              const principal =
+                (purchase.houseCost || 0) - (purchase.downPayment || 0);
+              const monthlyRate = (purchase.interestRate || 0) / 100 / 12;
+              const numPayments = (purchase.mortgageTerm || 30) * 12;
+              if (monthlyRate > 0) {
+                const monthlyPayment =
+                  (principal *
+                    (monthlyRate * Math.pow(1 + monthlyRate, numPayments))) /
+                  (Math.pow(1 + monthlyRate, numPayments) - 1);
+                balance -= monthlyPayment * 12;
+              }
+            }
+          } else if (purchase.year === year + 1) {
+            // Regular one-time purchase
+            balance -= purchase.amount || 0;
+          }
         });
       }
     }
@@ -135,17 +157,50 @@ export default function FinancialPlanner() {
       const annualContribution = currentIncome * (currentSavingsRate / 100);
       balance += annualContribution;
 
-      // Subtract big purchases for this year
+      // Handle big purchases and mortgages for this year
       if (advancedMode) {
-        const purchasesThisYear = bigPurchases.filter(
-          (p) => p.year === yearNum,
-        );
-        purchasesThisYear.forEach((purchase) => {
-          balance -= purchase.amount;
-          events.push({
-            type: "purchase",
-            label: `${purchase.description || "Purchase"}: -$${purchase.amount.toLocaleString()}`,
-          });
+        bigPurchases.forEach((purchase) => {
+          if (purchase.type === "mortgage") {
+            // Down payment in the first year
+            if (purchase.year === yearNum) {
+              const downPayment = purchase.downPayment || 0;
+              balance -= downPayment;
+              events.push({
+                type: "mortgage_down",
+                label: `${purchase.description || "Mortgage"} Down Payment: -$${downPayment.toLocaleString()}`,
+              });
+            }
+            // Annual mortgage payments
+            if (
+              yearNum >= purchase.year &&
+              yearNum < purchase.year + (purchase.mortgageTerm || 30)
+            ) {
+              const principal =
+                (purchase.houseCost || 0) - (purchase.downPayment || 0);
+              const monthlyRate = (purchase.interestRate || 0) / 100 / 12;
+              const numPayments = (purchase.mortgageTerm || 30) * 12;
+              if (monthlyRate > 0) {
+                const monthlyPayment =
+                  (principal *
+                    (monthlyRate * Math.pow(1 + monthlyRate, numPayments))) /
+                  (Math.pow(1 + monthlyRate, numPayments) - 1);
+                const annualPayment = monthlyPayment * 12;
+                balance -= annualPayment;
+                events.push({
+                  type: "mortgage_payment",
+                  label: `${purchase.description || "Mortgage"} Payment: -$${annualPayment.toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr`,
+                });
+              }
+            }
+          } else if (purchase.year === yearNum) {
+            // Regular one-time purchase
+            const amount = purchase.amount || 0;
+            balance -= amount;
+            events.push({
+              type: "purchase",
+              label: `${purchase.description || "Purchase"}: -$${amount.toLocaleString()}`,
+            });
+          }
         });
       }
 
@@ -213,12 +268,23 @@ export default function FinancialPlanner() {
     return field === "income" ? annualIncome : savingsRate;
   };
 
-  const addBigPurchase = () => {
+  const addBigPurchase = (type = "purchase") => {
     const newPurchase = {
       id: Date.now(),
+      type,
       year: 5,
-      amount: 50000,
-      description: "",
+      ...(type === "mortgage"
+        ? {
+            houseCost: 500000,
+            downPayment: 100000,
+            interestRate: 6.5,
+            mortgageTerm: 30,
+            description: "",
+          }
+        : {
+            amount: 50000,
+            description: "",
+          }),
     };
     setBigPurchases([...bigPurchases, newPurchase]);
   };
