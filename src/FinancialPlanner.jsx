@@ -1,5 +1,15 @@
 import { useState } from "react";
 import config from "./config.json";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceDot,
+} from "recharts";
 
 export default function FinancialPlanner() {
   const [annualIncome, setAnnualIncome] = useState(
@@ -12,6 +22,7 @@ export default function FinancialPlanner() {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [yearlyAdjustments, setYearlyAdjustments] = useState({});
   const [bigPurchases, setBigPurchases] = useState([]);
+  const [selectedCell, setSelectedCell] = useState(null); // { years, returnRate }
 
   // Define the ranges for the table
   const yearOptions = config.projections.yearOptions;
@@ -53,6 +64,74 @@ export default function FinancialPlanner() {
     }
 
     return Math.round(balance);
+  };
+
+  // Calculate year-by-year progression with event metadata
+  const calculateYearlyProgression = (years, returnRate) => {
+    const data = [];
+    let balance = initialSavings;
+    let currentIncome = annualIncome;
+    let currentSavingsRate = savingsRate;
+
+    // Add year 0
+    data.push({
+      year: 0,
+      balance: Math.round(balance),
+      events: [],
+    });
+
+    for (let year = 0; year < years; year++) {
+      const events = [];
+      const yearNum = year + 1;
+
+      // Apply growth from previous year
+      balance = balance * (1 + returnRate / 100);
+
+      // Check for adjustments for this year
+      if (advancedMode && yearlyAdjustments[yearNum]) {
+        const adjustment = yearlyAdjustments[yearNum];
+        if (adjustment.income !== undefined) {
+          events.push({
+            type: "income",
+            label: `Income: $${adjustment.income.toLocaleString()}`,
+          });
+          currentIncome = adjustment.income;
+        }
+        if (adjustment.savingsRate !== undefined) {
+          events.push({
+            type: "savings",
+            label: `Savings Rate: ${adjustment.savingsRate}%`,
+          });
+          currentSavingsRate = adjustment.savingsRate;
+        }
+      }
+
+      // Add contribution for this year
+      const annualContribution = currentIncome * (currentSavingsRate / 100);
+      balance += annualContribution;
+
+      // Subtract big purchases for this year
+      if (advancedMode) {
+        const purchasesThisYear = bigPurchases.filter(
+          (p) => p.year === yearNum,
+        );
+        purchasesThisYear.forEach((purchase) => {
+          balance -= purchase.amount;
+          events.push({
+            type: "purchase",
+            label: `${purchase.description || "Purchase"}: -$${purchase.amount.toLocaleString()}`,
+          });
+        });
+      }
+
+      data.push({
+        year: yearNum,
+        balance: Math.round(balance),
+        events,
+      });
+    }
+
+    return data;
   };
 
   const updateYearlyAdjustment = (year, field, value) => {
@@ -403,7 +482,8 @@ export default function FinancialPlanner() {
               [PROJECTION_MATRIX]
             </h3>
             <p className="text-xs text-terminal-text/50 mb-4">
-              balance by years(cols) × return_rate(rows)
+              balance by years(cols) × return_rate(rows) - click cell to
+              visualize
             </p>
             <table className="min-w-full border-collapse border border-terminal-border">
               <thead>
@@ -435,10 +515,18 @@ export default function FinancialPlanner() {
                       } else if (balance > config.colorThresholds.yellow) {
                         textColor = "text-terminal-amber";
                       }
+                      const isSelected =
+                        selectedCell &&
+                        selectedCell.years === year &&
+                        selectedCell.returnRate === rate;
                       return (
                         <td
                           key={`${rate}-${year}`}
-                          className={`border border-terminal-border px-3 py-2 text-center text-xs ${textColor}`}
+                          className={`border border-terminal-border px-3 py-2 text-center text-xs ${textColor} cursor-pointer hover:bg-terminal-bg transition-colors ${isSelected ? "bg-terminal-bg ring-1 ring-terminal-amber" : ""}`}
+                          onClick={() =>
+                            setSelectedCell({ years: year, returnRate: rate })
+                          }
+                          title="Click to visualize"
                         >
                           ${(balance / 1000000).toFixed(2)}M
                         </td>
@@ -449,6 +537,171 @@ export default function FinancialPlanner() {
               </tbody>
             </table>
           </div>
+
+          {/* Graph Visualization */}
+          {selectedCell && (
+            <div className="mt-8 border border-terminal-border p-4 bg-terminal-bg">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs text-terminal-amber">
+                  [WEALTH_ACCUMULATION_GRAPH] - {selectedCell.years} years @{" "}
+                  {selectedCell.returnRate}% return
+                </h3>
+                <button
+                  onClick={() => setSelectedCell(null)}
+                  className="text-xs text-terminal-text/50 hover:text-terminal-amber border border-terminal-border px-2 py-1 transition-colors"
+                >
+                  [X CLOSE]
+                </button>
+              </div>
+              <div className="h-96 bg-terminal-bgLight p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={calculateYearlyProgression(
+                      selectedCell.years,
+                      selectedCell.returnRate,
+                    )}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                    <XAxis
+                      dataKey="year"
+                      stroke="#a0a0a0"
+                      style={{ fontSize: "12px", fontFamily: "monospace" }}
+                      label={{
+                        value: "Year",
+                        position: "insideBottom",
+                        offset: -5,
+                        style: { fill: "#d4af37", fontSize: "12px" },
+                      }}
+                    />
+                    <YAxis
+                      stroke="#a0a0a0"
+                      style={{ fontSize: "12px", fontFamily: "monospace" }}
+                      tickFormatter={(value) =>
+                        `$${(value / 1000000).toFixed(1)}M`
+                      }
+                      label={{
+                        value: "Balance",
+                        angle: -90,
+                        position: "insideLeft",
+                        style: { fill: "#d4af37", fontSize: "12px" },
+                      }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1a1a1a",
+                        border: "1px solid #404040",
+                        borderRadius: "0",
+                        fontFamily: "monospace",
+                        fontSize: "11px",
+                      }}
+                      labelStyle={{ color: "#d4af37" }}
+                      itemStyle={{ color: "#00ff00" }}
+                      formatter={(value) => [
+                        `$${value.toLocaleString()}`,
+                        "Balance",
+                      ]}
+                      labelFormatter={(label) => `Year ${label}`}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div
+                              style={{
+                                backgroundColor: "#1a1a1a",
+                                border: "1px solid #404040",
+                                padding: "8px",
+                                fontFamily: "monospace",
+                                fontSize: "11px",
+                              }}
+                            >
+                              <p style={{ color: "#d4af37", margin: 0 }}>
+                                Year {data.year}
+                              </p>
+                              <p style={{ color: "#00ff00", margin: "4px 0" }}>
+                                Balance: ${data.balance.toLocaleString()}
+                              </p>
+                              {data.events && data.events.length > 0 && (
+                                <div
+                                  style={{
+                                    marginTop: "8px",
+                                    paddingTop: "8px",
+                                    borderTop: "1px solid #404040",
+                                  }}
+                                >
+                                  <p
+                                    style={{
+                                      color: "#d4af37",
+                                      margin: "0 0 4px 0",
+                                    }}
+                                  >
+                                    Events:
+                                  </p>
+                                  {data.events.map((event, idx) => (
+                                    <p
+                                      key={idx}
+                                      style={{
+                                        color:
+                                          event.type === "purchase"
+                                            ? "#ff6b6b"
+                                            : "#a0a0a0",
+                                        margin: "2px 0",
+                                        fontSize: "10px",
+                                      }}
+                                    >
+                                      • {event.label}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line
+                      type="stepAfter"
+                      dataKey="balance"
+                      stroke="#00ff00"
+                      strokeWidth={2}
+                      dot={{
+                        fill: "#00ff00",
+                        r: 3,
+                      }}
+                      activeDot={{
+                        r: 5,
+                        fill: "#d4af37",
+                      }}
+                    />
+                    {/* Mark events with dots */}
+                    {calculateYearlyProgression(
+                      selectedCell.years,
+                      selectedCell.returnRate,
+                    ).map((point, idx) =>
+                      point.events && point.events.length > 0
+                        ? point.events.map((event, eventIdx) => (
+                            <ReferenceDot
+                              key={`${idx}-${eventIdx}`}
+                              x={point.year}
+                              y={point.balance}
+                              r={6}
+                              fill={
+                                event.type === "purchase"
+                                  ? "#ff6b6b"
+                                  : "#d4af37"
+                              }
+                              stroke="#1a1a1a"
+                              strokeWidth={2}
+                            />
+                          ))
+                        : null,
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="text-xs text-terminal-text/40 border-t border-terminal-border pt-4">
@@ -460,7 +713,7 @@ export default function FinancialPlanner() {
           <p>
             //{" "}
             <a
-              href="https://github.com/brsg/retirement-calculator#readme"
+              href="https://github.com/brsg/readme"
               target="_blank"
               rel="noopener noreferrer"
               className="text-terminal-amber hover:text-terminal-amberDim underline"
