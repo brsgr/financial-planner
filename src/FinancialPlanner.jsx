@@ -3,11 +3,33 @@ import config from "./config.json";
 import ProjectionTable from "./components/ProjectionTable";
 import WealthChart from "./components/WealthChart";
 import AdvancedModeControls from "./components/AdvancedModeControls";
-import { loadState, saveState, clearState } from "./utils/storage";
+import {
+  loadState,
+  saveState,
+  clearState,
+  encodeStateToURL,
+  decodeStateFromURL,
+} from "./utils/storage";
 
 export default function FinancialPlanner() {
-  // Load initial state from localStorage or use defaults
-  const savedState = loadState();
+  // Check for shared state in URL first, then localStorage, then defaults
+  const getInitialState = () => {
+    // Check URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedState = urlParams.get("state");
+
+    if (sharedState) {
+      const decodedState = decodeStateFromURL(sharedState);
+      if (decodedState) {
+        return decodedState;
+      }
+    }
+
+    // Fall back to localStorage
+    return loadState();
+  };
+
+  const savedState = getInitialState();
 
   const [annualIncome, setAnnualIncome] = useState(
     savedState?.annualIncome ?? config.defaults.annualIncome,
@@ -28,6 +50,18 @@ export default function FinancialPlanner() {
     savedState?.bigPurchases ?? [],
   );
   const [selectedCell, setSelectedCell] = useState(null); // Don't persist selected cell
+  const [linkCopied, setLinkCopied] = useState(false); // Track if shareable link was copied
+
+  // Clear URL state parameter after initial load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("state")) {
+      // Remove the state parameter from URL without reloading the page
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("state");
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []); // Run only once on mount
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -422,6 +456,57 @@ export default function FinancialPlanner() {
     }
   };
 
+  const handleShareableLink = async () => {
+    const stateToShare = {
+      annualIncome,
+      initialSavings,
+      savingsRate,
+      advancedMode,
+      yearlyAdjustments,
+      bigPurchases,
+    };
+
+    const encodedState = encodeStateToURL(stateToShare);
+    if (!encodedState) {
+      alert("Failed to generate shareable link");
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    url.search = ""; // Clear existing params
+    url.searchParams.set("state", encodedState);
+    const shareableURL = url.toString();
+
+    let copySuccess = false;
+
+    try {
+      await navigator.clipboard.writeText(shareableURL);
+      copySuccess = true;
+    } catch (err) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement("textarea");
+      textArea.value = shareableURL;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        copySuccess = true;
+      } catch (e) {
+        alert("Failed to copy to clipboard. URL: " + shareableURL);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    if (copySuccess) {
+      setLinkCopied(true);
+      setTimeout(() => {
+        setLinkCopied(false);
+      }, 2000); // Reset after 2 seconds
+    }
+  };
+
   return (
     <div className="min-h-screen bg-terminal-bg text-terminal-text font-mono p-8">
       <div className="max-w-7xl mx-auto">
@@ -448,13 +533,26 @@ export default function FinancialPlanner() {
                   : "enable yearly projections"}
               </span>
             </div>
-            <button
-              onClick={handleReset}
-              className="text-xs text-terminal-text/50 hover:text-red-400 border border-terminal-border hover:border-red-400 px-3 py-1.5 transition-colors"
-              title="Reset all inputs to defaults"
-            >
-              [RESET]
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleShareableLink}
+                className={`text-xs px-3 py-1.5 transition-colors ${
+                  linkCopied
+                    ? "text-green-400 border border-green-400"
+                    : "text-terminal-amber hover:text-terminal-amberDim border border-terminal-amber hover:border-terminal-amberDim"
+                }`}
+                title="Copy shareable link to clipboard"
+              >
+                {linkCopied ? "[✓ COPIED!]" : "[SHARE LINK]"}
+              </button>
+              <button
+                onClick={handleReset}
+                className="text-xs text-terminal-text/50 hover:text-red-400 border border-terminal-border hover:border-red-400 px-3 py-1.5 transition-colors"
+                title="Reset all inputs to defaults"
+              >
+                [RESET]
+              </button>
+            </div>
           </div>
 
           {/* Controls */}
