@@ -510,12 +510,25 @@ export default function FinancialPlanner() {
   return (
     <div className="min-h-screen bg-terminal-bg text-terminal-text font-mono p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl text-terminal-amber mb-1">
-          $ financial-planner
-        </h1>
-        <p className="text-sm text-terminal-text/60 mb-8">
-          simple financial projection tool v1.0
-        </p>
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <h1 className="text-2xl text-terminal-amber">
+              $ financial-planner
+            </h1>
+            <p className="text-sm text-terminal-text/60 mt-1 mb-8">
+              simple financial projection tool v1.0
+            </p>
+          </div>
+          <a
+            href="https://github.com/brsgr/financial-planner"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-terminal-text/30 hover:text-terminal-text/60 transition-colors"
+            title="View source on GitHub"
+          >
+            [github]
+          </a>
+        </div>
 
         <div className="bg-terminal-bgLight border border-terminal-border p-6 mb-8">
           {/* Mode Toggle */}
@@ -653,7 +666,7 @@ export default function FinancialPlanner() {
           <p>
             //{" "}
             <a
-              href="https://github.com/brsg/financial-planner"
+              href="https://github.com/brsgr/financial-planner"
               target="_blank"
               rel="noopener noreferrer"
               className="text-terminal-amber hover:text-terminal-amberDim underline"
