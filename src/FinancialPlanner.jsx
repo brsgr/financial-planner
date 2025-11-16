@@ -1,21 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import config from "./config.json";
 import ProjectionTable from "./components/ProjectionTable";
 import WealthChart from "./components/WealthChart";
 import AdvancedModeControls from "./components/AdvancedModeControls";
+import { loadState, saveState } from "./utils/storage";
 
 export default function FinancialPlanner() {
+  // Load initial state from localStorage or use defaults
+  const savedState = loadState();
+
   const [annualIncome, setAnnualIncome] = useState(
-    config.defaults.annualIncome,
+    savedState?.annualIncome ?? config.defaults.annualIncome,
   );
   const [initialSavings, setInitialSavings] = useState(
-    config.defaults.initialSavings,
+    savedState?.initialSavings ?? config.defaults.initialSavings,
   );
-  const [savingsRate, setSavingsRate] = useState(config.defaults.savingsRate);
-  const [advancedMode, setAdvancedMode] = useState(false);
-  const [yearlyAdjustments, setYearlyAdjustments] = useState({});
-  const [bigPurchases, setBigPurchases] = useState([]);
-  const [selectedCell, setSelectedCell] = useState(null); // { years, returnRate }
+  const [savingsRate, setSavingsRate] = useState(
+    savedState?.savingsRate ?? config.defaults.savingsRate,
+  );
+  const [advancedMode, setAdvancedMode] = useState(
+    savedState?.advancedMode ?? false,
+  );
+  const [yearlyAdjustments, setYearlyAdjustments] = useState(
+    savedState?.yearlyAdjustments ?? {},
+  );
+  const [bigPurchases, setBigPurchases] = useState(
+    savedState?.bigPurchases ?? [],
+  );
+  const [selectedCell, setSelectedCell] = useState(null); // Don't persist selected cell
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    const stateToSave = {
+      annualIncome,
+      initialSavings,
+      savingsRate,
+      advancedMode,
+      yearlyAdjustments,
+      bigPurchases,
+    };
+    saveState(stateToSave);
+  }, [
+    annualIncome,
+    initialSavings,
+    savingsRate,
+    advancedMode,
+    yearlyAdjustments,
+    bigPurchases,
+  ]);
 
   // Define the ranges for the table
   const yearOptions = config.projections.yearOptions;
@@ -319,13 +351,13 @@ export default function FinancialPlanner() {
         <div className="text-xs text-terminal-text/40 border-t border-terminal-border pt-4">
           <p>// simplified projection model - educational purposes only</p>
           <p>
-            // all calculations run locally in your browser - no data is saved
-            or stored
+            // all calculations run locally in your browser - your inputs are
+            saved in your browser's local storage only
           </p>
           <p>
             //{" "}
             <a
-              href="https://github.com/brsgr/financial-planner"
+              href="https://github.com/brsg/financial-planner"
               target="_blank"
               rel="noopener noreferrer"
               className="text-terminal-amber hover:text-terminal-amberDim underline"
