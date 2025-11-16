@@ -451,8 +451,18 @@ export default function RetirementCalculator() {
         </div>
 
         <div className="text-xs text-terminal-text/40 border-t border-terminal-border pt-4">
-          <p>// simplified projection model - educational purposes only</p>
-          <p>// returns are variable - past performance ≠ future results</p>
+          <p>// simplified projection model</p>
+          <p>
+            //{" "}
+            <a
+              href="https://github.com/brsg/retirement-calculator#readme"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-terminal-amber hover:text-terminal-amberDim underline"
+            >
+              how it works
+            </a>
+          </p>
         </div>
       </div>
     </div>
