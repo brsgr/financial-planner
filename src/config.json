@@ -6,18 +6,18 @@
   },
   "sliders": {
     "annualIncome": {
-      "min": 20000,
-      "max": 1000000,
+      "min": 0,
+      "max": 2000000,
       "step": 10000
     },
     "savingsRate": {
-      "min": 5,
+      "min": 0,
       "max": 50,
       "step": 1
     },
     "initialSavings": {
       "min": 0,
-      "max": 1000000,
+      "max": 5000000,
       "step": 10000
     }
   },
