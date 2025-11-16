@@ -22,7 +22,7 @@
     }
   },
   "projections": {
-    "yearOptions": [5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
+    "yearOptions": [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
     "returnRateOptions": [0, 2, 4, 6, 8, 10, 12, 14]
   },
   "colorThresholds": {
