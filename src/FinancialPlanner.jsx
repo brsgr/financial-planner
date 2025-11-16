@@ -3,7 +3,7 @@ import config from "./config.json";
 import ProjectionTable from "./components/ProjectionTable";
 import WealthChart from "./components/WealthChart";
 import AdvancedModeControls from "./components/AdvancedModeControls";
-import { loadState, saveState } from "./utils/storage";
+import { loadState, saveState, clearState } from "./utils/storage";
 
 export default function FinancialPlanner() {
   // Load initial state from localStorage or use defaults
@@ -405,6 +405,23 @@ export default function FinancialPlanner() {
     );
   };
 
+  const handleReset = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to reset all inputs to defaults? This cannot be undone.",
+      )
+    ) {
+      clearState();
+      setAnnualIncome(config.defaults.annualIncome);
+      setInitialSavings(config.defaults.initialSavings);
+      setSavingsRate(config.defaults.savingsRate);
+      setAdvancedMode(false);
+      setYearlyAdjustments({});
+      setBigPurchases([]);
+      setSelectedCell(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-terminal-bg text-terminal-text font-mono p-8">
       <div className="max-w-7xl mx-auto">
@@ -417,18 +434,27 @@ export default function FinancialPlanner() {
 
         <div className="bg-terminal-bgLight border border-terminal-border p-6 mb-8">
           {/* Mode Toggle */}
-          <div className="mb-6 pb-4 border-b border-terminal-border">
+          <div className="mb-6 pb-4 border-b border-terminal-border flex items-center justify-between">
+            <div>
+              <button
+                onClick={() => setAdvancedMode(!advancedMode)}
+                className="text-xs text-terminal-amber hover:text-terminal-amberDim border border-terminal-amber px-3 py-1.5 transition-colors"
+              >
+                {advancedMode ? "[-] ADVANCED_MODE" : "[+] ADVANCED_MODE"}
+              </button>
+              <span className="ml-3 text-xs text-terminal-text/50">
+                {advancedMode
+                  ? "yearly income/savings adjustments enabled"
+                  : "enable yearly projections"}
+              </span>
+            </div>
             <button
-              onClick={() => setAdvancedMode(!advancedMode)}
-              className="text-xs text-terminal-amber hover:text-terminal-amberDim border border-terminal-amber px-3 py-1.5 transition-colors"
+              onClick={handleReset}
+              className="text-xs text-terminal-text/50 hover:text-red-400 border border-terminal-border hover:border-red-400 px-3 py-1.5 transition-colors"
+              title="Reset all inputs to defaults"
             >
-              {advancedMode ? "[-] ADVANCED_MODE" : "[+] ADVANCED_MODE"}
+              [RESET]
             </button>
-            <span className="ml-3 text-xs text-terminal-text/50">
-              {advancedMode
-                ? "yearly income/savings adjustments enabled"
-                : "enable yearly projections"}
-            </span>
           </div>
 
           {/* Controls */}
@@ -521,7 +547,7 @@ export default function FinancialPlanner() {
         </div>
 
         <div className="text-xs text-terminal-text/40 border-t border-terminal-border pt-4">
-          <p>// simplified projection model - educational purposes only</p>
+          <p>// simplified projection model</p>
           <p>
             // all calculations run locally in your browser - your inputs are
             saved in your browser's local storage only
